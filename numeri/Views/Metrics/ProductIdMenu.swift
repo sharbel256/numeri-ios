@@ -10,46 +10,76 @@ import SwiftUI
 struct ProductIdMenu: View {
     @Binding var productIds: [String]
     @Binding var selectedProductId: String
-    @State private var showAddProductAlert = false
-    @State private var newProductId = ""
-    
+    @State private var showProductSearch = false
+    @StateObject private var productService: ProductService
+    @StateObject private var oauthManager = OAuthManager()
+
+    init(productIds: Binding<[String]>, selectedProductId: Binding<String>) {
+        _productIds = productIds
+        _selectedProductId = selectedProductId
+        let service = ProductService(accessToken: nil)
+        _productService = StateObject(wrappedValue: service)
+    }
+
     var body: some View {
         ScrollView([.horizontal], showsIndicators: false) {
-            HStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 6) {
                 ForEach(productIds, id: \.self) { productId in
-                    VStack {
-                        ProductIdCard(
-                            productId: productId,
-                            productIds: $productIds,
-                            selectedProductId: $selectedProductId
-                        )
-                    }
+                    ProductIdCard(
+                        productId: productId,
+                        productIds: $productIds,
+                        selectedProductId: $selectedProductId
+                    )
                 }
-                
+
                 Button(action: {
-                    showAddProductAlert = true
+                    showProductSearch = true
                 }) {
-                    Text("+")
+                    HStack(spacing: TerminalTheme.paddingTiny) {
+                        Text("+")
+                            .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeSmall, weight: .bold))
+                        Text("ADD")
+                            .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeSmall, weight: .bold))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, TerminalTheme.paddingMedium)
+                    .padding(.vertical, TerminalTheme.paddingSmall)
+                    .background(TerminalTheme.cyan)
+                    .overlay(
+                        Rectangle()
+                            .stroke(TerminalTheme.border, lineWidth: 1)
+                    )
                 }
-                .buttonStyle(RoundButtonStyle())
+                .buttonStyle(.plain)
             }
         }
-        .padding([.leading, .trailing], 2)
-        .alert("Add Product", isPresented: $showAddProductAlert) {
-            TextField("Product ID (e.g., BTC-USD)", text: $newProductId)
-            Button("Cancel", role: .cancel) {
-                newProductId = ""
-            }
-            Button("Add") {
-                if !newProductId.isEmpty && !productIds.contains(newProductId) {
-                    productIds.append(newProductId)
-                    selectedProductId = newProductId
+        .padding([.leading, .trailing], 4)
+        .sheet(isPresented: $showProductSearch) {
+            ProductSearchView(
+                productService: productService,
+                isPresented: $showProductSearch,
+                onSelect: { productId in
+                    if !productIds.contains(productId) {
+                        productIds.append(productId)
+                        selectedProductId = productId
+                    }
+                },
+                existingProductIds: productIds
+            )
+        }
+        .onAppear {
+            oauthManager.loadTokens()
+            if let token = oauthManager.accessToken {
+                productService.updateToken(token)
+                productService.setTokenRefreshHandler { [weak oauthManager] in
+                    guard let oauthManager = oauthManager else { return nil }
+                    let success = await oauthManager.refreshAccessToken()
+                    return success ? oauthManager.accessToken : nil
                 }
-                newProductId = ""
             }
-        } message: {
-            Text("Enter a product ID to add to your order books")
+        }
+        .onChange(of: oauthManager.accessToken) { _, newToken in
+            productService.updateToken(newToken)
         }
     }
 }
-

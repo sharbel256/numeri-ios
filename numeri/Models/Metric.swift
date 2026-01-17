@@ -13,9 +13,9 @@ enum MetricType: String, Identifiable {
     case orderBookDepth = "Order Book Depth"
     case priceVelocity = "Price Velocity"
     case orderFlowRate = "Order Flow Rate"
-    
+
     var id: String { rawValue }
-    
+
     var description: String {
         switch self {
         case .orderBookImbalance:
@@ -41,16 +41,15 @@ struct Metric: Identifiable {
     let isAvailable: Bool
     let timestamp: Date
     let latencyMs: Int?
-    
+
     init(type: MetricType, value: Double, formattedValue: String, unit: String? = nil, isAvailable: Bool = true, latencyMs: Int? = nil) {
-        self.id = UUID()
+        id = UUID()
         self.type = type
         self.value = value
         self.formattedValue = formattedValue
         self.unit = unit
         self.isAvailable = isAvailable
-        self.timestamp = Date()
+        timestamp = Date()
         self.latencyMs = latencyMs
     }
 }
-

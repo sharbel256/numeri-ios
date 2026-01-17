@@ -22,23 +22,30 @@ struct Order: Identifiable, Codable {
     let createdAt: Date
     let updatedAt: Date
     let source: OrderSource // Where the order came from
-    
+
     // Optional fields
     let stopPrice: Double? // For stop orders
     let timeInForce: TimeInForce?
     let postOnly: Bool?
     let rejectReason: String?
     
+    // Additional fields from Coinbase API
+    let totalFees: Double? // Total fees for the order
+    let filledValue: Double? // Subtotal: portion filled in quote currency
+    let totalValueAfterFees: Double? // Total: filled value after fees
+    let numberOfFills: Int? // Number of fills that have been posted
+    let lastFillTime: Date? // Time of the most recent fill
+
     // Metadata
     let algorithmId: String? // If created from algorithm suggestion
     let algorithmName: String? // If created from algorithm suggestion
-    
+
     // For missed opportunities
     let targetCloseTime: Date? // When the algorithm expected to close this position
     let goalPnL: Double? // Expected profit/loss if executed
     let actualPnL: Double? // Actual PnL if we track the price at target close time
     let targetPrice: Double? // Target exit price
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case clientOrderId = "client_order_id"
@@ -63,8 +70,13 @@ struct Order: Identifiable, Codable {
         case goalPnL = "goal_pnl"
         case actualPnL = "actual_pnl"
         case targetPrice = "target_price"
+        case totalFees = "total_fees"
+        case filledValue = "filled_value"
+        case totalValueAfterFees = "total_value_after_fees"
+        case numberOfFills = "number_of_fills"
+        case lastFillTime = "last_fill_time"
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -90,8 +102,13 @@ struct Order: Identifiable, Codable {
         goalPnL = try container.decodeIfPresent(Double.self, forKey: .goalPnL)
         actualPnL = try container.decodeIfPresent(Double.self, forKey: .actualPnL)
         targetPrice = try container.decodeIfPresent(Double.self, forKey: .targetPrice)
+        totalFees = try container.decodeIfPresent(Double.self, forKey: .totalFees)
+        filledValue = try container.decodeIfPresent(Double.self, forKey: .filledValue)
+        totalValueAfterFees = try container.decodeIfPresent(Double.self, forKey: .totalValueAfterFees)
+        numberOfFills = try container.decodeIfPresent(Int.self, forKey: .numberOfFills)
+        lastFillTime = try container.decodeIfPresent(Date.self, forKey: .lastFillTime)
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -117,8 +134,13 @@ struct Order: Identifiable, Codable {
         try container.encodeIfPresent(goalPnL, forKey: .goalPnL)
         try container.encodeIfPresent(actualPnL, forKey: .actualPnL)
         try container.encodeIfPresent(targetPrice, forKey: .targetPrice)
+        try container.encodeIfPresent(totalFees, forKey: .totalFees)
+        try container.encodeIfPresent(filledValue, forKey: .filledValue)
+        try container.encodeIfPresent(totalValueAfterFees, forKey: .totalValueAfterFees)
+        try container.encodeIfPresent(numberOfFills, forKey: .numberOfFills)
+        try container.encodeIfPresent(lastFillTime, forKey: .lastFillTime)
     }
-    
+
     init(
         id: String,
         clientOrderId: String? = nil,
@@ -142,7 +164,12 @@ struct Order: Identifiable, Codable {
         targetCloseTime: Date? = nil,
         goalPnL: Double? = nil,
         actualPnL: Double? = nil,
-        targetPrice: Double? = nil
+        targetPrice: Double? = nil,
+        totalFees: Double? = nil,
+        filledValue: Double? = nil,
+        totalValueAfterFees: Double? = nil,
+        numberOfFills: Int? = nil,
+        lastFillTime: Date? = nil
     ) {
         self.id = id
         self.clientOrderId = clientOrderId
@@ -167,6 +194,11 @@ struct Order: Identifiable, Codable {
         self.goalPnL = goalPnL
         self.actualPnL = actualPnL
         self.targetPrice = targetPrice
+        self.totalFees = totalFees
+        self.filledValue = filledValue
+        self.totalValueAfterFees = totalValueAfterFees
+        self.numberOfFills = numberOfFills
+        self.lastFillTime = lastFillTime
     }
 }
 
@@ -177,11 +209,11 @@ enum OrderStatus: String, Codable {
     case canceled = "CANCELED"
     case rejected = "REJECTED"
     case expired = "EXPIRED"
-    
+
     var displayName: String {
         rawValue.capitalized
     }
-    
+
     var color: String {
         switch self {
         case .pending, .open:
@@ -199,7 +231,7 @@ enum OrderType: String, Codable {
     case limit = "LIMIT"
     case stop = "STOP"
     case stopLimit = "STOP_LIMIT"
-    
+
     var displayName: String {
         switch self {
         case .stopLimit:
@@ -218,11 +250,11 @@ enum TimeInForce: String, Codable {
 }
 
 enum OrderSource: String, Codable {
-    case manual = "manual"
-    case algorithm = "algorithm"
-    case suggestion = "suggestion"
-    case missed = "missed" // A suggestion that was not executed
-    
+    case manual
+    case algorithm
+    case suggestion
+    case missed // A suggestion that was not executed
+
     var displayName: String {
         switch self {
         case .missed:
@@ -244,7 +276,7 @@ struct CreateOrderRequest: Codable {
     let timeInForce: TimeInForce?
     let postOnly: Bool?
     let clientOrderId: String?
-    
+
     init(
         productId: String,
         side: OrderSide,
@@ -266,7 +298,7 @@ struct CreateOrderRequest: Codable {
         self.postOnly = postOnly
         self.clientOrderId = clientOrderId
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case productId = "product_id"
         case side
@@ -278,16 +310,16 @@ struct CreateOrderRequest: Codable {
         case postOnly = "post_only"
         case clientOrderId = "client_order_id"
     }
-    
+
     func toCoinbaseJSON() -> [String: Any] {
         var json: [String: Any] = [
             "product_id": productId,
-            "side": side.rawValue
+            "side": side.rawValue,
         ]
-        
+
         // Order configuration based on type
         var orderConfig: [String: Any] = [:]
-        
+
         switch orderType {
         case .market:
             if let size = size {
@@ -322,13 +354,13 @@ struct CreateOrderRequest: Codable {
             }
             orderConfig["stop_loss_stop_loss_limit_gtc"] = stopLimitConfig
         }
-        
+
         json["order_configuration"] = orderConfig
-        
+
         if let clientOrderId = clientOrderId {
             json["client_order_id"] = clientOrderId
         }
-        
+
         return json
     }
 }
@@ -340,7 +372,7 @@ struct CreateOrderResponse: Codable {
     let orderId: String?
     let successResponse: OrderResponse?
     let errorResponse: ErrorResponse?
-    
+
     enum CodingKeys: String, CodingKey {
         case success
         case failureReason = "failure_reason"
@@ -355,7 +387,7 @@ struct OrderResponse: Codable {
     let productId: String
     let side: String
     let clientOrderId: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case orderId = "order_id"
         case productId = "product_id"
@@ -368,11 +400,10 @@ struct ErrorResponse: Codable {
     let error: String
     let message: String?
     let errorDetails: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case error
         case message
         case errorDetails = "error_details"
     }
 }
-

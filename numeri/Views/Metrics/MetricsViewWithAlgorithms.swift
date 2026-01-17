@@ -6,8 +6,8 @@
 //  This demonstrates the extensible architecture for algorithm metrics
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
 
 // This is an example of how to integrate AlgorithmMetricsManager
 // You can replace MetricsView with this or merge the functionality
@@ -21,30 +21,30 @@ struct MetricsViewWithAlgorithms: View {
     @StateObject private var algorithmManager = AlgorithmMetricsManager()
     @State private var cancellables = Set<AnyCancellable>()
     @State private var showSuggestions = false
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ProductIdMenu(productIds: $productIds, selectedProductId: $selectedProductId)
-                .padding(.top)
-                .padding(.bottom)
-            
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+
             if oauthManager.accessToken == nil {
                 LoginPromptView(showCredentialsAlert: .constant(false))
                 Spacer()
             } else {
                 if let manager = webSocketManagers[selectedProductId] {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
                         MetricsSidebar(metricsCalculator: metricsCalculator)
-                        
+
                         Spacer()
-                            .frame(width: 20)
-                        
+                            .frame(width: 8)
+
                         OrderbookContentView(
                             webSocketManager: manager,
                             maxQuantity: maxQuantity(for: manager),
                             productId: selectedProductId
                         )
-                        
+
                         // Toggle button for suggestions
                         if !algorithmManager.suggestions.isEmpty {
                             Button(action: { showSuggestions.toggle() }) {
@@ -59,7 +59,7 @@ struct MetricsViewWithAlgorithms: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 8)
                     .frame(maxHeight: .infinity)
                     .onAppear {
                         observeManager(manager)
@@ -93,10 +93,11 @@ struct MetricsViewWithAlgorithms: View {
             // Create WebSocketManager for the newly selected product ID if it doesn't exist
             if let token = oauthManager.accessToken,
                !newProductId.isEmpty,
-               webSocketManagers[newProductId] == nil {
+               webSocketManagers[newProductId] == nil
+            {
                 webSocketManagers[newProductId] = WebSocketManager(accessToken: token, productId: newProductId)
             }
-            
+
             metricsCalculator.reset()
             algorithmManager.reset()
             if let manager = webSocketManagers[newProductId] {
@@ -118,16 +119,16 @@ struct MetricsViewWithAlgorithms: View {
             }
         }
     }
-    
+
     private func observeManager(_ manager: WebSocketManager) {
         cancellables.removeAll()
-        
+
         // Subscribe to atomic orderbook snapshot for metrics calculator
         manager.$orderbookSnapshot
             .debounce(for: .milliseconds(50), scheduler: DispatchQueue.main)
             .sink { [metricsCalculator, algorithmManager] snapshot in
                 guard let midPrice = snapshot.midPrice else { return }
-                
+
                 // Update traditional metrics
                 metricsCalculator.calculateMetrics(
                     bids: snapshot.bids,
@@ -135,30 +136,30 @@ struct MetricsViewWithAlgorithms: View {
                     currentPrice: midPrice,
                     latencyMs: snapshot.latencyMs
                 )
-                
+
                 // Update algorithm metrics and generate suggestions
                 algorithmManager.processSnapshot(snapshot, productId: selectedProductId)
             }
             .store(in: &cancellables)
     }
-    
+
     private func setupWebSocketManagers() {
         guard let token = oauthManager.accessToken else {
             webSocketManagers.removeAll()
             return
         }
-        
+
         // Ensure selectedProductId is valid
         if !productIds.contains(selectedProductId) || selectedProductId.isEmpty {
             selectedProductId = productIds.first ?? ""
         }
-        
+
         // Only create WebSocketManager for the selected product ID if it doesn't exist
         let productIdToSubscribe = selectedProductId.isEmpty ? (productIds.first ?? "") : selectedProductId
-        if !productIdToSubscribe.isEmpty && webSocketManagers[productIdToSubscribe] == nil {
+        if !productIdToSubscribe.isEmpty, webSocketManagers[productIdToSubscribe] == nil {
             webSocketManagers[productIdToSubscribe] = WebSocketManager(accessToken: token, productId: productIdToSubscribe)
         }
-        
+
         // Remove managers for product IDs that are no longer in the list
         let productIdSet = Set(productIds)
         let toRemove = webSocketManagers.keys.filter { !productIdSet.contains($0) }
@@ -166,11 +167,10 @@ struct MetricsViewWithAlgorithms: View {
             webSocketManagers.removeValue(forKey: productId)
         }
     }
-    
+
     private func maxQuantity(for manager: WebSocketManager) -> Double {
         let allEntries = manager.bids.getElements() + manager.offers.getElements()
         let quantities = allEntries.filter { $0.quantity > 0 }.map { $0.quantity }
         return quantities.max() ?? 1.0
     }
 }
-

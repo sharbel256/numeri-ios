@@ -12,7 +12,7 @@ struct OrdersViewWithExecution: View {
     @State private var orderManager: OrderExecutionManager?
     @State private var showCredentialsAlert: Bool = false
     @State private var selectedTab = 0
-    
+
     var body: some View {
         VStack {
             if oauthManager.accessToken == nil {
@@ -26,7 +26,7 @@ struct OrdersViewWithExecution: View {
                                 Label("History", systemImage: "list.bullet.rectangle")
                             }
                             .tag(0)
-                        
+
                         // Pending Orders Tab
                         PendingOrdersView(orderManager: manager)
                             .tabItem {
@@ -43,7 +43,7 @@ struct OrdersViewWithExecution: View {
             }
         }
         .alert("Log in Required", isPresented: $showCredentialsAlert) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) {}
         } message: {
             Text("Please go to the Settings tab to log in with Coinbase.")
         }
@@ -67,7 +67,7 @@ struct OrdersViewWithExecution: View {
             }
         }
     }
-    
+
     private func initializeOrderManager() {
         if orderManager == nil, let token = oauthManager.accessToken {
             orderManager = OrderExecutionManager(accessToken: token) { [weak oauthManager] in
@@ -84,15 +84,15 @@ struct OrdersViewWithExecution: View {
 
 struct PendingOrdersView: View {
     @ObservedObject var orderManager: OrderExecutionManager
-    
+
     private var pendingOrders: [Order] {
         orderManager.getPendingOrders().sorted { $0.createdAt > $1.createdAt }
     }
-    
+
     var body: some View {
         NavigationView {
             if pendingOrders.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Image(systemName: "checkmark.circle")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
@@ -104,16 +104,15 @@ struct PendingOrdersView: View {
                 .navigationTitle("Pending Orders")
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 8) {
+                    LazyVStack(spacing: 6) {
                         ForEach(pendingOrders) { order in
                             OrderCard(order: order, orderManager: orderManager)
                         }
                     }
-                    .padding()
+                    .padding(8)
                 }
                 .navigationTitle("Pending Orders")
             }
         }
     }
 }
-

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct MetricsGrid: View {
     @ObservedObject var metricsCalculator: MetricsCalculator
-    
+
     private var allMetricTypes: [MetricType] {
         [.orderBookImbalance, .vwap, .orderBookDepth, .priceVelocity, .orderFlowRate]
     }
-    
+
     private var allMetrics: [Metric] {
         allMetricTypes.map { type in
             metricsCalculator.metrics[type] ?? Metric(
@@ -25,25 +25,26 @@ struct MetricsGrid: View {
             )
         }
     }
-    
+
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12)
-            ], spacing: 12) {
+                GridItem(.flexible(minimum: 120), spacing: TerminalTheme.paddingSmall),
+                GridItem(.flexible(minimum: 120), spacing: TerminalTheme.paddingSmall),
+            ], spacing: TerminalTheme.paddingSmall) {
                 ForEach(allMetrics, id: \.type) { metric in
                     MetricBox(metric: metric)
                         .id(metric.type)
                         .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                            insertion: .opacity,
                             removal: .opacity
                         ))
                 }
             }
-            .padding()
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: allMetrics.count)
+            .padding(.horizontal, TerminalTheme.paddingSmall)
+            .padding(.vertical, TerminalTheme.paddingSmall)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(TerminalTheme.background)
     }
 }
-

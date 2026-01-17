@@ -7,10 +7,10 @@
 
 import SwiftUI
 #if canImport(UIKit)
-import UIKit
+    import UIKit
 #endif
 #if canImport(AppKit)
-import AppKit
+    import AppKit
 #endif
 
 struct ProductIdCard: View {
@@ -18,28 +18,31 @@ struct ProductIdCard: View {
     @Binding var productIds: [String]
     @Binding var selectedProductId: String
     @State private var showDeleteConfirmation = false
-    
+
     private var isSelected: Bool {
         selectedProductId == productId
     }
-    
+
     private func performHapticFeedback() {
         #if canImport(UIKit)
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
         #elseif canImport(AppKit)
-        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+            NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
         #endif
     }
-    
+
     var body: some View {
         Text(productId)
-            .font(.system(size: 14))
-            .foregroundColor(.white)
-            .padding(.horizontal, 15)
-            .padding(.vertical, 10)
-            .background(isSelected ? Color.blue : Color.gray)
-            .cornerRadius(20)
+            .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeSmall, weight: .medium))
+            .foregroundColor(isSelected ? .black : TerminalTheme.textPrimary)
+            .padding(.horizontal, TerminalTheme.paddingMedium)
+            .padding(.vertical, TerminalTheme.paddingSmall)
+            .background(isSelected ? TerminalTheme.cyan : TerminalTheme.surface)
+            .overlay(
+                Rectangle()
+                    .stroke(isSelected ? TerminalTheme.cyan : TerminalTheme.border, lineWidth: 1)
+            )
             .onTapGesture {
                 selectedProductId = productId
             }
@@ -49,9 +52,9 @@ struct ProductIdCard: View {
                     showDeleteConfirmation = true
                 }
             }
-            .alert("Remove Product", isPresented: $showDeleteConfirmation) {
-                Button("Cancel", role: .cancel) { }
-                Button("Remove", role: .destructive) {
+            .alert("REMOVE PRODUCT", isPresented: $showDeleteConfirmation) {
+                Button("CANCEL", role: .cancel) {}
+                Button("REMOVE", role: .destructive) {
                     productIds.removeAll { $0 == productId }
                     if selectedProductId == productId {
                         selectedProductId = productIds.first ?? ""
@@ -62,4 +65,3 @@ struct ProductIdCard: View {
             }
     }
 }
-

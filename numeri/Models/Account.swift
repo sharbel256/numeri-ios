@@ -24,7 +24,7 @@ struct Account: Identifiable, Codable {
     let hold: Amount?
     let retailPortfolioId: String?
     let platform: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case uuid
         case name
@@ -47,7 +47,7 @@ struct Account: Identifiable, Codable {
 struct Amount: Codable {
     let value: String
     let currency: String
-    
+
     var amountValue: Double? {
         return Double(value)
     }
@@ -59,7 +59,7 @@ struct AccountsResponse: Codable {
     let hasNext: Bool
     let cursor: String?
     let size: Int?
-    
+
     enum CodingKeys: String, CodingKey {
         case accounts
         case hasNext = "has_next"
@@ -67,4 +67,3 @@ struct AccountsResponse: Codable {
         case size
     }
 }
-

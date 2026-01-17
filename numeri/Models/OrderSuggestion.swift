@@ -23,7 +23,7 @@ struct OrderSuggestion: Identifiable {
     let targetCloseTime: Date? // When the algorithm expects to close this position
     let goalPnL: Double? // Expected profit/loss if executed and closed at target time
     let targetPrice: Double? // Target exit price for calculating PnL
-    
+
     init(
         id: UUID = UUID(),
         algorithmName: String,
@@ -47,7 +47,7 @@ struct OrderSuggestion: Identifiable {
         self.productId = productId
         self.suggestedPrice = suggestedPrice
         self.suggestedSize = suggestedSize
-        self.confidence = confidence.clamped(to: 0.0...1.0)
+        self.confidence = confidence.clamped(to: 0.0 ... 1.0)
         self.reasoning = reasoning
         self.timestamp = timestamp
         self.metricValue = metricValue
@@ -67,4 +67,3 @@ extension Comparable {
         return min(max(self, range.lowerBound), range.upperBound)
     }
 }
-

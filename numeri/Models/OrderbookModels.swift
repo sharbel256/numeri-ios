@@ -21,7 +21,7 @@ struct OrderbookMessage: Codable {
     let events: [OrderbookEvent]?
     let type: String?
     let message: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case channel, timestamp, type, message
         case clientId = "client_id"
@@ -35,7 +35,7 @@ struct OrderbookEvent: Codable {
     let productId: String?
     let updates: [OrderbookUpdate]?
     let subscriptions: SubscriptionInfo?
-    
+
     enum CodingKeys: String, CodingKey {
         case type
         case productId = "product_id"
@@ -53,7 +53,7 @@ struct OrderbookUpdate: Codable {
     let eventTime: String
     let priceLevel: String
     let newQuantity: String
-    
+
     enum CodingKeys: String, CodingKey {
         case side
         case eventTime = "event_time"
@@ -68,14 +68,14 @@ struct OrderbookEntry: Identifiable, Equatable, Comparable {
     let quantity: Double
     let side: String
     let timestamp: String
-    
+
     nonisolated static func < (lhs: OrderbookEntry, rhs: OrderbookEntry) -> Bool {
         if lhs.price != rhs.price {
             return lhs.price < rhs.price
         }
         return lhs.id.uuidString < rhs.id.uuidString
     }
-    
+
     nonisolated static func == (lhs: OrderbookEntry, rhs: OrderbookEntry) -> Bool {
         return lhs.id == rhs.id
     }
@@ -86,12 +86,12 @@ enum OrderBookType {
 }
 
 // Atomic snapshot of orderbook state to ensure bids and offers are from the same point in time
-struct OrderbookSnapshot {
+struct OrderbookSnapshot: Equatable {
     let bids: [OrderbookEntry]
     let offers: [OrderbookEntry]
     let timestamp: Date
     let latencyMs: Int
-    
+
     var midPrice: Double? {
         guard let bestBid = bids.first, let bestAsk = offers.first else {
             if let bestBid = bids.first {
@@ -105,4 +105,3 @@ struct OrderbookSnapshot {
         return (bestBid.price + bestAsk.price) / 2
     }
 }
-

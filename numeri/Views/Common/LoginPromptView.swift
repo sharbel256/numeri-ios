@@ -9,31 +9,29 @@ import SwiftUI
 
 struct LoginPromptView: View {
     @Binding var showCredentialsAlert: Bool
-    
+
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.orange)
-            
-            Text("Coinbase Login Required")
-                .font(.title)
-                .fontWeight(.bold)
-            
+        VStack(spacing: TerminalTheme.paddingMedium) {
+            Text("⚠")
+                .font(.system(size: 40))
+                .foregroundColor(TerminalTheme.amber)
+
+            Text("COINBASE LOGIN REQUIRED")
+                .font(TerminalTheme.monospaced(size: 14, weight: .bold))
+                .foregroundColor(TerminalTheme.textPrimary)
+
             Text("Please log in with Coinbase in the Settings tab to view the order book.")
-                .font(.body)
-                .foregroundColor(.secondary)
+                .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeSmall))
+                .foregroundColor(TerminalTheme.textSecondary)
                 .multilineTextAlignment(.center)
-            
-            Button("Go to Settings") {
+
+            Button("GO TO SETTINGS") {
                 showCredentialsAlert = true
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+            .buttonStyle(TerminalActionButtonStyle(color: TerminalTheme.blue))
         }
-        .padding()
+        .padding(TerminalTheme.paddingLarge)
+        .background(TerminalTheme.surface)
+        .overlay(TerminalTheme.borderStyle())
     }
 }
-

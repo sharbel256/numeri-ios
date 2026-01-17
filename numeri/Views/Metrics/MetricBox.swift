@@ -7,17 +7,17 @@
 
 import SwiftUI
 #if canImport(AppKit)
-import AppKit
+    import AppKit
 #endif
 
 struct MetricBox: View {
     let metric: Metric
     @State private var showInfo = false
-    
+
     private var valueFontSize: CGFloat {
         let text = metric.formattedValue
         let length = text.count
-        
+
         if length > 12 {
             return 11
         } else if length > 8 {
@@ -26,78 +26,81 @@ struct MetricBox: View {
             return 15
         }
     }
-    
+
     // Cross-platform background color that adapts to the system appearance
     private var backgroundColor: Color {
         #if canImport(UIKit)
-        return Color(.systemGray6)
+            return Color(.systemGray6)
         #elseif canImport(AppKit)
-        return Color(nsColor: .controlBackgroundColor)
+            return Color(nsColor: .controlBackgroundColor)
         #else
-        return Color(white: 0.95)
+            return Color(white: 0.95)
         #endif
     }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 4) {
-                Text(metric.type.rawValue)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: TerminalTheme.paddingTiny) {
+            HStack(alignment: .top, spacing: TerminalTheme.paddingTiny) {
+                Text(metric.type.rawValue.uppercased())
+                    .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeTiny))
+                    .foregroundColor(TerminalTheme.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                
+
                 Spacer()
-                
+
                 Button(action: {
                     showInfo = true
                 }) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary.opacity(0.6))
+                    Text("?")
+                        .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeTiny, weight: .bold))
+                        .foregroundColor(TerminalTheme.textSecondary)
+                        .frame(width: 14, height: 14)
                 }
                 .buttonStyle(.plain)
                 .help(metric.type.description)
             }
-            
+
             if metric.isAvailable {
                 Text(metric.formattedValue)
-                    .font(.system(size: valueFontSize, weight: .semibold))
+                    .font(TerminalTheme.monospaced(size: valueFontSize, weight: .semibold))
+                    .foregroundColor(TerminalTheme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             } else {
                 Text(metric.formattedValue)
-                    .font(.system(size: valueFontSize))
-                    .foregroundColor(.secondary)
+                    .font(TerminalTheme.monospaced(size: valueFontSize))
+                    .foregroundColor(TerminalTheme.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            
+
             if let latency = metric.latencyMs, latency >= 0 {
                 Text("\(latency)ms")
-                    .font(.system(size: 8))
-                    .foregroundColor(.secondary.opacity(0.7))
+                    .font(TerminalTheme.monospaced(size: 8))
+                    .foregroundColor(TerminalTheme.textSecondary.opacity(0.7))
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 10)
+        .padding(.horizontal, TerminalTheme.paddingSmall)
+        .padding(.vertical, TerminalTheme.paddingSmall)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(backgroundColor)
-        .cornerRadius(8)
+        .background(TerminalTheme.surface)
+        .overlay(TerminalTheme.borderStyle())
         .popover(isPresented: $showInfo, arrowEdge: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(metric.type.rawValue)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
+            VStack(alignment: .leading, spacing: TerminalTheme.paddingSmall) {
+                Text(metric.type.rawValue.uppercased())
+                    .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeMedium, weight: .bold))
+                    .foregroundColor(TerminalTheme.textPrimary)
+
                 Text(metric.type.description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(TerminalTheme.monospaced(size: TerminalTheme.fontSizeSmall))
+                    .foregroundColor(TerminalTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding()
+            .padding(TerminalTheme.paddingMedium)
             .frame(maxWidth: 250)
+            .background(TerminalTheme.surface)
+            .overlay(TerminalTheme.borderStyle())
         }
     }
 }
-

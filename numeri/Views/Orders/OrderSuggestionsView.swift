@@ -12,72 +12,75 @@ struct OrderSuggestionsView: View {
     let orderManager: OrderExecutionManager?
     @State private var minConfidence: Double = 0.6
     @State private var selectedSide: OrderSide? = nil
-    
+
     init(algorithmManager: AlgorithmMetricsManager, orderManager: OrderExecutionManager? = nil) {
         self.algorithmManager = algorithmManager
         self.orderManager = orderManager
     }
-    
+
     private var filteredSuggestions: [OrderSuggestion] {
         var suggestions = algorithmManager.getFilteredSuggestions(minConfidence: minConfidence)
-        
+
         if let side = selectedSide {
             suggestions = suggestions.filter { $0.side == side }
         }
-        
+
         // Sort by timestamp (newest first)
         return suggestions.sorted { $0.timestamp > $1.timestamp }
     }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: TerminalTheme.paddingSmall) {
             // Header with filters
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Order Suggestions")
-                    .font(.headline)
-                
-                HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: TerminalTheme.paddingSmall) {
+                Text("ORDER SUGGESTIONS")
+                    .font(TerminalTheme.monospaced(size: 12, weight: .bold))
+                    .foregroundColor(TerminalTheme.textPrimary)
+
+                HStack(spacing: TerminalTheme.paddingSmall) {
                     // Confidence filter
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Min Confidence: \(Int(minConfidence * 100))%")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Slider(value: $minConfidence, in: 0.0...1.0)
+                    VStack(alignment: .leading, spacing: TerminalTheme.paddingTiny) {
+                        Text("MIN CONFIDENCE: \(Int(minConfidence * 100))%")
+                            .font(TerminalTheme.monospaced(size: 9))
+                            .foregroundColor(TerminalTheme.textSecondary)
+                        Slider(value: $minConfidence, in: 0.0 ... 1.0)
                             .frame(width: 150)
+                            .tint(TerminalTheme.cyan)
                     }
-                    
+
                     // Side filter
                     Picker("Side", selection: $selectedSide) {
-                        Text("All").tag(OrderSide?.none)
-                        Text("Buy").tag(OrderSide?.some(.buy))
-                        Text("Sell").tag(OrderSide?.some(.sell))
+                        Text("ALL").tag(OrderSide?.none)
+                        Text("BUY").tag(OrderSide?.some(.buy))
+                        Text("SELL").tag(OrderSide?.some(.sell))
                     }
                     .pickerStyle(.segmented)
                     .frame(width: 150)
-                    
+                    .font(TerminalTheme.monospaced(size: 9))
+
                     Spacer()
                 }
             }
-            .padding(.horizontal)
-            
+            .padding(.horizontal, TerminalTheme.paddingSmall)
+
             // Suggestions list
             if filteredSuggestions.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                    Text("No suggestions available")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Text("Adjust confidence threshold or wait for signals")
-                        .font(.caption)
-                        .foregroundColor(.secondary.opacity(0.7))
+                VStack(spacing: TerminalTheme.paddingSmall) {
+                    Text("📈")
+                        .font(.system(size: 30))
+                        .foregroundColor(TerminalTheme.textSecondary)
+                    Text("NO SUGGESTIONS AVAILABLE")
+                        .font(TerminalTheme.monospaced(size: 10, weight: .medium))
+                        .foregroundColor(TerminalTheme.textSecondary)
+                    Text("ADJUST CONFIDENCE THRESHOLD OR WAIT FOR SIGNALS")
+                        .font(TerminalTheme.monospaced(size: 9))
+                        .foregroundColor(TerminalTheme.textSecondary.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
+                .padding(TerminalTheme.paddingSmall)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 8) {
+                    LazyVStack(spacing: TerminalTheme.paddingSmall) {
                         ForEach(filteredSuggestions) { suggestion in
                             OrderSuggestionCard(
                                 suggestion: suggestion,
@@ -86,11 +89,12 @@ struct OrderSuggestionsView: View {
                             )
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                    .padding(.horizontal, TerminalTheme.paddingSmall)
+                    .padding(.bottom, TerminalTheme.paddingSmall)
                 }
             }
         }
+        .background(TerminalTheme.background)
     }
 }
 
@@ -102,164 +106,172 @@ struct OrderSuggestionCard: View {
     @State private var isExecuting = false
     @State private var showError = false
     @State private var errorMessage = ""
-    
+
     private var confidenceColor: Color {
         if suggestion.confidence >= 0.8 {
-            return .green
+            return TerminalTheme.green
         } else if suggestion.confidence >= 0.6 {
-            return .orange
+            return TerminalTheme.amber
         } else {
-            return .red
+            return TerminalTheme.red
         }
     }
-    
+
     private var sideColor: Color {
-        suggestion.side == .buy ? .green : .red
+        suggestion.side == .buy ? TerminalTheme.green : TerminalTheme.red
     }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TerminalTheme.paddingSmall) {
             // Header
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(suggestion.algorithmName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: TerminalTheme.paddingTiny) {
+                    Text(suggestion.algorithmName.uppercased())
+                        .font(TerminalTheme.monospaced(size: 10, weight: .semibold))
+                        .foregroundColor(TerminalTheme.textPrimary)
+
+                    HStack(spacing: TerminalTheme.paddingSmall) {
                         // Side badge
-                        Text(suggestion.side.rawValue)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                        Text(suggestion.side.rawValue.uppercased())
+                            .font(TerminalTheme.monospaced(size: 8, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, TerminalTheme.paddingTiny)
+                            .padding(.vertical, 1)
                             .background(sideColor)
-                            .cornerRadius(4)
-                        
+
                         // Confidence badge
                         Text("\(Int(suggestion.confidence * 100))%")
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                            .font(TerminalTheme.monospaced(size: 8, weight: .semibold))
                             .foregroundColor(confidenceColor)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(confidenceColor.opacity(0.2))
-                            .cornerRadius(4)
-                        
+                            .padding(.horizontal, TerminalTheme.paddingTiny)
+                            .padding(.vertical, 1)
+                            .background(confidenceColor.opacity(0.15))
+                            .overlay(
+                                Rectangle()
+                                    .stroke(confidenceColor, lineWidth: 1)
+                            )
+
                         // Time ago badge
-                        Text(timeAgoString(from: suggestion.timestamp))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.1))
-                            .cornerRadius(4)
+                        Text(timeAgoString(from: suggestion.timestamp).uppercased())
+                            .font(TerminalTheme.monospaced(size: 8, weight: .medium))
+                            .foregroundColor(TerminalTheme.textSecondary)
+                            .padding(.horizontal, TerminalTheme.paddingTiny)
+                            .padding(.vertical, 1)
+                            .background(TerminalTheme.surface)
+                            .overlay(
+                                Rectangle()
+                                    .stroke(TerminalTheme.border, lineWidth: 1)
+                            )
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Button(action: { isExpanded.toggle() }) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                    Text(isExpanded ? "−" : "+")
+                        .font(TerminalTheme.monospaced(size: 10, weight: .bold))
+                        .foregroundColor(TerminalTheme.textSecondary)
+                        .frame(width: 16, height: 16)
                 }
+                .buttonStyle(.plain)
             }
-            
+
             // Price and size
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Price")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: TerminalTheme.paddingTiny) {
+                    Text("PRICE")
+                        .font(TerminalTheme.monospaced(size: 8))
+                        .foregroundColor(TerminalTheme.textSecondary)
                     Text("$\(suggestion.suggestedPrice, specifier: "%.2f")")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(TerminalTheme.monospaced(size: 11, weight: .semibold))
+                        .foregroundColor(TerminalTheme.textPrimary)
                 }
-                
+
                 Spacer()
-                
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("Size")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+
+                VStack(alignment: .trailing, spacing: TerminalTheme.paddingTiny) {
+                    Text("SIZE")
+                        .font(TerminalTheme.monospaced(size: 8))
+                        .foregroundColor(TerminalTheme.textSecondary)
                     Text("\(suggestion.suggestedSize, specifier: "%.4f")")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(TerminalTheme.monospaced(size: 11, weight: .semibold))
+                        .foregroundColor(TerminalTheme.textPrimary)
                 }
             }
-            
+
             // Expanded details
             if isExpanded {
-                Divider()
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Reasoning")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                    
-                    Text(suggestion.reasoning)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
+                Rectangle()
+                    .fill(TerminalTheme.border)
+                    .frame(height: 1)
+                    .padding(.vertical, TerminalTheme.paddingTiny)
+
+                VStack(alignment: .leading, spacing: TerminalTheme.paddingTiny) {
+                    Text("REASONING")
+                        .font(TerminalTheme.monospaced(size: 8, weight: .semibold))
+                        .foregroundColor(TerminalTheme.textSecondary)
+
+                    Text(suggestion.reasoning.uppercased())
+                        .font(TerminalTheme.monospaced(size: 9))
+                        .foregroundColor(TerminalTheme.textSecondary)
+
                     if let metricValue = suggestion.metricValue {
                         HStack {
-                            Text("Metric Value:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text("METRIC VALUE:")
+                                .font(TerminalTheme.monospaced(size: 9))
+                                .foregroundColor(TerminalTheme.textSecondary)
                             Text("\(metricValue, specifier: "%.4f")")
-                                .font(.caption)
-                                .fontWeight(.semibold)
+                                .font(TerminalTheme.monospaced(size: 9, weight: .semibold))
+                                .foregroundColor(TerminalTheme.textPrimary)
                         }
-                        .padding(.top, 4)
                     }
-                    
+
                     if let targetCloseTime = suggestion.targetCloseTime {
                         HStack {
-                            Text("Target Close:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text("TARGET CLOSE:")
+                                .font(TerminalTheme.monospaced(size: 9))
+                                .foregroundColor(TerminalTheme.textSecondary)
                             Text(targetCloseTime, style: .relative)
-                                .font(.caption)
-                                .fontWeight(.semibold)
+                                .font(TerminalTheme.monospaced(size: 9, weight: .semibold))
+                                .foregroundColor(TerminalTheme.textPrimary)
                         }
                     }
-                    
+
                     if let goalPnL = suggestion.goalPnL {
                         HStack {
-                            Text("Goal P&L:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text("GOAL P&L:")
+                                .font(TerminalTheme.monospaced(size: 9))
+                                .foregroundColor(TerminalTheme.textSecondary)
                             Text("$\(goalPnL, specifier: "%.2f")")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundColor(goalPnL >= 0 ? .green : .red)
+                                .font(TerminalTheme.monospaced(size: 9, weight: .semibold))
+                                .foregroundColor(goalPnL >= 0 ? TerminalTheme.green : TerminalTheme.red)
                         }
                     }
-                    
+
                     if let targetPrice = suggestion.targetPrice {
                         HStack {
-                            Text("Target Price:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text("TARGET PRICE:")
+                                .font(TerminalTheme.monospaced(size: 9))
+                                .foregroundColor(TerminalTheme.textSecondary)
                             Text("$\(targetPrice, specifier: "%.2f")")
-                                .font(.caption)
-                                .fontWeight(.semibold)
+                                .font(TerminalTheme.monospaced(size: 9, weight: .semibold))
+                                .foregroundColor(TerminalTheme.textPrimary)
                         }
                     }
-                    
-                    Text("Product: \(suggestion.productId)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+
+                    Text("PRODUCT: \(suggestion.productId)")
+                        .font(TerminalTheme.monospaced(size: 9))
+                        .foregroundColor(TerminalTheme.textSecondary)
                 }
             }
-            
+
             // Execute button
             if let orderManager = orderManager {
-                Divider()
-                
+                Rectangle()
+                    .fill(TerminalTheme.border)
+                    .frame(height: 1)
+                    .padding(.vertical, TerminalTheme.paddingTiny)
+
                 Button(action: {
                     Task {
                         isExecuting = true
@@ -274,43 +286,46 @@ struct OrderSuggestionCard: View {
                         isExecuting = false
                     }
                 }) {
-                    HStack {
+                    HStack(spacing: TerminalTheme.paddingTiny) {
                         if isExecuting {
                             ProgressView()
-                                .scaleEffect(0.8)
+                                .scaleEffect(0.7)
+                                .tint(.black)
                         } else {
-                            Image(systemName: "arrow.up.circle.fill")
+                            Text("↑")
+                                .font(TerminalTheme.monospaced(size: 12, weight: .bold))
                         }
-                        Text(isExecuting ? "Executing..." : "Execute Order")
+                        Text(isExecuting ? "EXECUTING..." : "EXECUTE ORDER")
+                            .font(TerminalTheme.monospaced(size: 10, weight: .bold))
                     }
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, TerminalTheme.paddingSmall)
                     .background(sideColor)
-                    .cornerRadius(6)
+                    .overlay(
+                        Rectangle()
+                            .stroke(TerminalTheme.border, lineWidth: 1)
+                    )
                 }
                 .disabled(isExecuting)
-                .alert("Order Error", isPresented: $showError) {
-                    Button("OK", role: .cancel) { }
+                .alert("ORDER ERROR", isPresented: $showError) {
+                    Button("OK", role: .cancel) {}
                 } message: {
                     Text(errorMessage)
                 }
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
+        .padding(TerminalTheme.paddingSmall)
+        .background(TerminalTheme.surface)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(sideColor.opacity(0.3), lineWidth: 1)
+            Rectangle()
+                .stroke(sideColor.opacity(0.5), lineWidth: 1)
         )
     }
-    
+
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        
+
         if interval < 60 {
             let seconds = Int(interval)
             return "\(seconds)s ago"
@@ -323,4 +338,3 @@ struct OrderSuggestionCard: View {
         }
     }
 }
-
