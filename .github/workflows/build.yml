@@ -38,7 +38,7 @@ jobs:
         xcodebuild clean build \
           -project numeri.xcodeproj \
           -scheme numeri \
-          -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+          -destination 'platform=iOS Simulator,id=dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder' \
           -configuration Debug \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
@@ -51,7 +51,7 @@ jobs:
         xcodebuild test \
           -project numeri.xcodeproj \
           -scheme numeri \
-          -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+          -destination 'platform=iOS Simulator,id=dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder' \
           -configuration Debug \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
